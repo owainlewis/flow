@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run dev)",
+      "Bash(kill:*)",
+      "WebFetch(domain:app.spiral.computer)"
+    ]
+  }
+}
