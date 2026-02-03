@@ -3,7 +3,7 @@
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { Trash2 } from 'lucide-react';
 import { Post, PLATFORM_LABELS } from '../types/content';
-import { formatDate } from '../utils/feed';
+import { formatDate, stripHtml, truncateText } from '../utils/feed';
 import { getPlatformIcons } from '../utils/platform-icons';
 import { StatusBadge } from './StatusSelector';
 
@@ -11,18 +11,6 @@ interface PostCardProps {
   post: Post;
   onClick: () => void;
   onDelete: (id: string) => void;
-}
-
-function stripHtml(html: string): string {
-  const div = document.createElement('div');
-  div.innerHTML = html;
-  return div.textContent || div.innerText || '';
-}
-
-function truncateText(text: string, maxLength: number = 150): string {
-  const trimmed = text.trim();
-  if (trimmed.length <= maxLength) return trimmed;
-  return trimmed.slice(0, maxLength).trim() + '...';
 }
 
 const PLATFORM_ICONS = getPlatformIcons(14);

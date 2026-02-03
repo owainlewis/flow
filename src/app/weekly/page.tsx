@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Feed, Post, Platform, PLATFORM_LABELS, WeeklyCadence, DEFAULT_CADENCE, DAY_LABELS } from '../types/content';
-import { loadFeed, saveFeed, getWeekStart, formatWeekRange, loadCadence, createPostWithMeta, getScheduledPostsForPlatformDay } from '../utils/feed';
+import { loadFeed, saveFeed, getWeekStart, formatWeekRange, loadCadence, createPostWithMeta, getScheduledPostsForPlatformDay, stripHtml, truncateText } from '../utils/feed';
 import { getPlatformIcons } from '../utils/platform-icons';
 import AppLayout from '../components/AppLayout';
 import { StatusBadge } from '../components/StatusSelector';
@@ -12,19 +12,6 @@ import { StatusBadge } from '../components/StatusSelector';
 const THEME_KEY = 'contentflow-theme';
 
 const PLATFORM_ICONS = getPlatformIcons(18);
-
-function stripHtml(html: string): string {
-  if (typeof document === 'undefined') return html.replace(/<[^>]*>/g, '');
-  const div = document.createElement('div');
-  div.innerHTML = html;
-  return div.textContent || div.innerText || '';
-}
-
-function truncateText(text: string, maxLength: number = 60): string {
-  const trimmed = text.trim();
-  if (trimmed.length <= maxLength) return trimmed;
-  return trimmed.slice(0, maxLength).trim() + '...';
-}
 
 function getDayDates(weekStart: Date): Date[] {
   return Array.from({ length: 7 }, (_, i) => {
@@ -218,7 +205,7 @@ export default function WeeklyPage() {
                                 <StatusBadge status={post.status} size="sm" />
                               </div>
                               <p className="text-xs leading-snug text-[var(--foreground)]">
-                                {truncateText(stripHtml(post.body)) || (
+                                {truncateText(stripHtml(post.body), 60) || (
                                   <span className="text-[var(--muted-foreground)]">Empty</span>
                                 )}
                               </p>

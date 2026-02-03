@@ -103,7 +103,16 @@ export function saveFeed(feed: Feed): void {
 }
 
 export function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  if (typeof document === 'undefined') return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  return div.textContent || div.innerText || '';
+}
+
+export function truncateText(text: string, maxLength: number = 150): string {
+  const trimmed = text.trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  return trimmed.slice(0, maxLength).trim() + '...';
 }
 
 export function countChars(html: string): number {
