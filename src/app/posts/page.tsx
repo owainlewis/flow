@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AppLayout from '../components/AppLayout';
 import PostCard from '../components/PostCard';
-import { Feed, Post, Platform, ContentStatus, STATUS_LABELS, PLATFORM_LABELS } from '../types/content';
+import { Feed, Post, Platform, ContentStatus, STATUS_LABELS, PLATFORM_LABELS, PLATFORM_CONTENT_LABELS, getContentLabel } from '../types/content';
 import { loadFeed, saveFeed, createPost, sortByNewest, deletePost, filterByPlatform, filterByStatus } from '../utils/feed';
 
 const THEME_KEY = 'contentflow-theme';
@@ -63,10 +63,10 @@ function PostsContent() {
   const sortedItems = sortByNewest(filteredItems);
 
   const pageTitle = isDocFilter
-    ? 'Docs'
+    ? PLATFORM_CONTENT_LABELS.doc.plural
     : platformFromUrl
-      ? `${PLATFORM_LABELS[platformFromUrl] ?? platformFromUrl} Posts`
-      : 'All Posts';
+      ? `${PLATFORM_LABELS[platformFromUrl] ?? platformFromUrl} ${getContentLabel(platformFromUrl, true)}`
+      : 'All Content';
 
   return (
     <div className="max-w-[800px] mx-auto p-8">
@@ -96,8 +96,8 @@ function PostsContent() {
         <div className="text-center py-16 text-[var(--muted-foreground)]">
           <p className="mb-4">
             {isDocFilter || platformFromUrl || statusFilter !== 'all'
-              ? 'No posts match your filters.'
-              : 'No posts yet.'}
+              ? `No ${isDocFilter ? 'docs' : platformFromUrl ? getContentLabel(platformFromUrl, true).toLowerCase() : 'content'} match your filters.`
+              : 'No content yet.'}
           </p>
           <button
             onClick={() => {
@@ -112,7 +112,7 @@ function PostsContent() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Create your first post
+            Create your first {isDocFilter ? 'doc' : platformFromUrl ? getContentLabel(platformFromUrl).toLowerCase() : 'post'}
           </button>
         </div>
       ) : (
