@@ -2,16 +2,15 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Placeholder from '@tiptap/extension-placeholder';
-import { Feed, Post, ContentStatus, Platform, PLATFORM_FIELDS, PLATFORM_CHAR_LIMITS, PLATFORM_LABELS, getContentLabel } from '../../types/content';
+import { Editor } from '@tiptap/react';
+import { Feed, Post, ContentStatus, Platform, PLATFORM_CHAR_LIMITS, PLATFORM_LABELS, getContentLabel } from '../../types/content';
 import { loadFeed, saveFeed, countChars, formatDate, stripHtml, htmlToMarkdown, countPinnedForPlatform } from '../../utils/feed';
 import AppLayout from '../../components/AppLayout';
 import StatusSelector from '../../components/StatusSelector';
 import ContentTypeSelector from '../../components/ContentTypeSelector';
 import ChatPanel from '../../components/ChatPanel';
 import { useChat } from '../../hooks/useChat';
+import { DocEditor } from '../../components/editors';
 import { marked } from 'marked';
 
 const THEME_KEY = 'contentflow-theme';
@@ -29,13 +28,13 @@ export default function PostPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [charCount, setCharCount] = useState(0);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const copyStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const metaSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const feedRef = useRef<Feed | null>(null);
-  const initializedRef = useRef(false);
-  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
+  const editorRef = useRef<Editor | null>(null);
   const postRef = useRef<Post | null>(null);
 
   const getEditorContent = useCallback(() => {
@@ -50,63 +49,6 @@ export default function PostPage() {
     return postRef.current?.description || '';
   }, []);
 
-  const editor = useEditor({
-    immediatelyRender: false,
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-        codeBlock: false,
-        code: false,
-        horizontalRule: false,
-        dropcursor: false,
-        gapcursor: false,
-      }),
-      Placeholder.configure({
-        placeholder: 'Start writing...',
-      }),
-    ],
-    content: '',
-    editorProps: {
-      attributes: {
-        class: 'editor-content outline-none min-h-[200px]',
-      },
-    },
-    onUpdate: ({ editor }) => {
-      if (!feedRef.current || !postId) return;
-
-      const content = editor.getHTML();
-
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      if (saveStatusTimeoutRef.current) {
-        clearTimeout(saveStatusTimeoutRef.current);
-      }
-
-      setSaveStatus('saving');
-
-      saveTimeoutRef.current = setTimeout(() => {
-        const feed = loadFeed();
-        const updatedItems = feed.items.map((item) =>
-          item.id === postId && item.type === 'post'
-            ? { ...item, body: content, updatedAt: Date.now() }
-            : item
-        );
-        const newFeed = { items: updatedItems };
-        saveFeed(newFeed);
-        feedRef.current = newFeed;
-        setSaveStatus('saved');
-
-        saveStatusTimeoutRef.current = setTimeout(() => {
-          setSaveStatus('idle');
-        }, 2000);
-      }, DEBOUNCE_MS);
-    },
-  });
-
-  // Keep refs synced
-  editorRef.current = editor;
-
   const chat = useChat({
     postId,
     platform: post?.platform ?? null,
@@ -116,16 +58,21 @@ export default function PostPage() {
   });
 
   const handleInsertContent = useCallback((content: string) => {
-    if (!editor) return;
+    if (!editorRef.current) return;
     const html = marked.parse(content, { async: false }) as string;
-    editor.chain().focus('end').insertContent(html).run();
-  }, [editor]);
+    editorRef.current.chain().focus('end').insertContent(html).run();
+  }, []);
 
   const handleReplaceContent = useCallback((content: string) => {
-    if (!editor) return;
+    if (!editorRef.current) return;
     const html = marked.parse(content, { async: false }) as string;
-    editor.commands.setContent(html);
-  }, [editor]);
+    editorRef.current.commands.setContent(html);
+  }, []);
+
+  // Called by the editor component when TipTap is ready
+  const handleEditorReady = useCallback((editor: Editor | null) => {
+    editorRef.current = editor;
+  }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem(THEME_KEY);
@@ -151,27 +98,11 @@ export default function PostPage() {
   }, [postId]);
 
   useEffect(() => {
-    if (editor && post && isLoaded && !initializedRef.current) {
-      initializedRef.current = true;
-      editor.commands.setContent(post.body || '');
-      editor.commands.focus('end');
-    }
-  }, [editor, post, isLoaded]);
-
-  useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-      if (saveStatusTimeoutRef.current) {
-        clearTimeout(saveStatusTimeoutRef.current);
-      }
-      if (copyStatusTimeoutRef.current) {
-        clearTimeout(copyStatusTimeoutRef.current);
-      }
-      if (metaSaveTimeoutRef.current) {
-        clearTimeout(metaSaveTimeoutRef.current);
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      if (saveStatusTimeoutRef.current) clearTimeout(saveStatusTimeoutRef.current);
+      if (copyStatusTimeoutRef.current) clearTimeout(copyStatusTimeoutRef.current);
+      if (metaSaveTimeoutRef.current) clearTimeout(metaSaveTimeoutRef.current);
     };
   }, []);
 
@@ -196,7 +127,6 @@ export default function PostPage() {
     if (metaSaveTimeoutRef.current) {
       clearTimeout(metaSaveTimeoutRef.current);
     }
-    // Update local state immediately for responsive UI
     setPost((prev) => {
       const updated = prev ? { ...prev, ...updates } : prev;
       postRef.current = updated;
@@ -213,6 +143,35 @@ export default function PostPage() {
       const newFeed = { items: updatedItems };
       saveFeed(newFeed);
       feedRef.current = newFeed;
+    }, DEBOUNCE_MS);
+  }, [postId]);
+
+  // Called by editor components when body content changes
+  const handleBodyChange = useCallback((content: string) => {
+    if (!feedRef.current || !postId) return;
+
+    setCharCount(countChars(content));
+
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    if (saveStatusTimeoutRef.current) clearTimeout(saveStatusTimeoutRef.current);
+
+    setSaveStatus('saving');
+
+    saveTimeoutRef.current = setTimeout(() => {
+      const feed = loadFeed();
+      const updatedItems = feed.items.map((item) =>
+        item.id === postId && item.type === 'post'
+          ? { ...item, body: content, updatedAt: Date.now() }
+          : item
+      );
+      const newFeed = { items: updatedItems };
+      saveFeed(newFeed);
+      feedRef.current = newFeed;
+      setSaveStatus('saved');
+
+      saveStatusTimeoutRef.current = setTimeout(() => {
+        setSaveStatus('idle');
+      }, 2000);
     }, DEBOUNCE_MS);
   }, [postId]);
 
@@ -240,6 +199,7 @@ export default function PostPage() {
   }, []);
 
   const handleCopyPlaintext = useCallback(async () => {
+    const editor = editorRef.current;
     if (!editor) return;
 
     const plainText = stripHtml(editor.getHTML());
@@ -248,9 +208,7 @@ export default function PostPage() {
       await navigator.clipboard.writeText(plainText);
       setCopyStatus('copied');
 
-      if (copyStatusTimeoutRef.current) {
-        clearTimeout(copyStatusTimeoutRef.current);
-      }
+      if (copyStatusTimeoutRef.current) clearTimeout(copyStatusTimeoutRef.current);
 
       copyStatusTimeoutRef.current = setTimeout(() => {
         setCopyStatus('idle');
@@ -258,9 +216,10 @@ export default function PostPage() {
     } catch (err) {
       console.error('Failed to copy:', err);
     }
-  }, [editor]);
+  }, []);
 
   const handleExport = useCallback(() => {
+    const editor = editorRef.current;
     if (!editor) return;
 
     const markdown = htmlToMarkdown(editor.getHTML());
@@ -280,7 +239,7 @@ export default function PostPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [editor, postId]);
+  }, [postId]);
 
   if (!isLoaded) {
     return null;
@@ -307,13 +266,8 @@ export default function PostPage() {
     );
   }
 
-  const charCount = editor ? countChars(editor.getHTML()) : 0;
-
-  // Platform-specific field config
-  const platformFields = post?.platform ? PLATFORM_FIELDS[post.platform] : undefined;
-  const charLimits = post?.platform ? PLATFORM_CHAR_LIMITS[post.platform] : undefined;
-
   // Char counter display
+  const charLimits = post?.platform ? PLATFORM_CHAR_LIMITS[post.platform] : undefined;
   const bodyLimit = charLimits?.body;
   const charCountDisplay = bodyLimit ? `${charCount}/${bodyLimit}` : `${charCount} chars`;
   const isOverLimit = bodyLimit ? charCount > bodyLimit : false;
@@ -323,6 +277,32 @@ export default function PostPage() {
     : isNearLimit
       ? 'text-yellow-500'
       : 'text-[var(--muted-foreground)]';
+
+  // Render the platform-specific editor
+  function renderEditor() {
+    if (!post) return null;
+
+    const editorProps = {
+      post,
+      onBodyChange: handleBodyChange,
+      onFieldChange: saveMetadataDebounced,
+      onEditorReady: handleEditorReady,
+      initialBody: post.body,
+    };
+
+    // All platforms currently use DocEditor as base.
+    // Platform-specific editors (YouTube, Newsletter, Twitter, Instagram, TikTok)
+    // will be added in subsequent tickets and dispatched here.
+    switch (post.platform) {
+      // case 'youtube': return <YouTubeEditor {...editorProps} />;
+      // case 'newsletter': return <NewsletterEditor {...editorProps} />;
+      // case 'twitter': return <TwitterEditor {...editorProps} />;
+      // case 'instagram': return <InstagramEditor {...editorProps} />;
+      // case 'tiktok': return <TikTokEditor {...editorProps} />;
+      default:
+        return <DocEditor {...editorProps} />;
+    }
+  }
 
   return (
     <AppLayout>
@@ -431,57 +411,7 @@ export default function PostPage() {
         {/* Content area with optional chat panel */}
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-auto">
-            <div className="max-w-[700px] mx-auto p-8">
-              {/* Platform-specific title field */}
-              {platformFields?.title && (
-                <input
-                  type="text"
-                  value={post?.title || ''}
-                  onChange={(e) => saveMetadataDebounced({ title: e.target.value })}
-                  placeholder={platformFields.title}
-                  className="w-full text-2xl font-semibold bg-transparent border-none outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)] mb-4"
-                />
-              )}
-
-              <EditorContent editor={editor} />
-
-              {/* Platform-specific description field */}
-              {platformFields?.description && (
-                <div className="mt-6">
-                  <textarea
-                    value={post?.description || ''}
-                    onChange={(e) => saveMetadataDebounced({ description: e.target.value })}
-                    placeholder={platformFields.description}
-                    rows={4}
-                    className="w-full text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg p-3 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)] resize-y"
-                  />
-                  {charLimits?.description && (
-                    <div className={`text-xs mt-1 text-right ${
-                      (post?.description?.length || 0) > charLimits.description
-                        ? 'text-red-500'
-                        : (post?.description?.length || 0) > charLimits.description * 0.9
-                          ? 'text-yellow-500'
-                          : 'text-[var(--muted-foreground)]'
-                    }`}>
-                      {post?.description?.length || 0}/{charLimits.description}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Title char limit indicator */}
-              {platformFields?.title && charLimits?.title && (
-                <div className={`text-xs mt-1 ${
-                  (post?.title?.length || 0) > charLimits.title
-                    ? 'text-red-500'
-                    : (post?.title?.length || 0) > charLimits.title * 0.9
-                      ? 'text-yellow-500'
-                      : 'text-[var(--muted-foreground)]'
-                }`} style={{ position: 'relative', top: '-1rem' }}>
-                  {post?.title?.length || 0}/{charLimits.title}
-                </div>
-              )}
-            </div>
+            {renderEditor()}
           </div>
 
           {isChatOpen && (
