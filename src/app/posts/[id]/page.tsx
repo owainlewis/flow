@@ -10,7 +10,7 @@ import StatusSelector from '../../components/StatusSelector';
 import ContentTypeSelector from '../../components/ContentTypeSelector';
 import ChatPanel from '../../components/ChatPanel';
 import { useChat } from '../../hooks/useChat';
-import { DocEditor } from '../../components/editors';
+import { DocEditor, YouTubeEditor, NewsletterEditor, TwitterEditor, InstagramEditor, TikTokEditor } from '../../components/editors';
 import { marked } from 'marked';
 
 const THEME_KEY = 'contentflow-theme';
@@ -290,15 +290,12 @@ export default function PostPage() {
       initialBody: post.body,
     };
 
-    // All platforms currently use DocEditor as base.
-    // Platform-specific editors (YouTube, Newsletter, Twitter, Instagram, TikTok)
-    // will be added in subsequent tickets and dispatched here.
     switch (post.platform) {
-      // case 'youtube': return <YouTubeEditor {...editorProps} />;
-      // case 'newsletter': return <NewsletterEditor {...editorProps} />;
-      // case 'twitter': return <TwitterEditor {...editorProps} />;
-      // case 'instagram': return <InstagramEditor {...editorProps} />;
-      // case 'tiktok': return <TikTokEditor {...editorProps} />;
+      case 'youtube': return <YouTubeEditor {...editorProps} />;
+      case 'newsletter': return <NewsletterEditor {...editorProps} />;
+      case 'twitter': return <TwitterEditor {...editorProps} />;
+      case 'instagram': return <InstagramEditor {...editorProps} />;
+      case 'tiktok': return <TikTokEditor {...editorProps} />;
       default:
         return <DocEditor {...editorProps} />;
     }

@@ -1,0 +1,193 @@
+'use client';
+
+import { useEffect, useRef, useCallback } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import { PlatformEditorProps } from './types';
+import { CharCount } from './CharCount';
+
+export default function YouTubeEditor({ post, onBodyChange, onFieldChange, onEditorReady, initialBody }: PlatformEditorProps) {
+  const initializedRef = useRef(false);
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        codeBlock: false,
+        code: false,
+        horizontalRule: false,
+        dropcursor: false,
+        gapcursor: false,
+      }),
+      Placeholder.configure({
+        placeholder: 'Write your script...',
+      }),
+    ],
+    content: '',
+    editorProps: {
+      attributes: {
+        class: 'editor-content outline-none min-h-[200px]',
+      },
+    },
+    onUpdate: ({ editor }) => {
+      onBodyChange(editor.getHTML());
+    },
+  });
+
+  useEffect(() => {
+    onEditorReady?.(editor ?? null);
+    return () => onEditorReady?.(null);
+  }, [editor, onEditorReady]);
+
+  useEffect(() => {
+    if (editor && !initializedRef.current && initialBody !== undefined) {
+      initializedRef.current = true;
+      editor.commands.setContent(initialBody || '');
+      editor.commands.focus('end');
+    }
+  }, [editor, initialBody]);
+
+  const timestamps = post.timestamps || [];
+
+  const addTimestamp = useCallback(() => {
+    onFieldChange({ timestamps: [...timestamps, { time: '', label: '' }] });
+  }, [timestamps, onFieldChange]);
+
+  const updateTimestamp = useCallback((index: number, field: 'time' | 'label', value: string) => {
+    const updated = timestamps.map((ts, i) =>
+      i === index ? { ...ts, [field]: value } : ts
+    );
+    onFieldChange({ timestamps: updated });
+  }, [timestamps, onFieldChange]);
+
+  const removeTimestamp = useCallback((index: number) => {
+    onFieldChange({ timestamps: timestamps.filter((_, i) => i !== index) });
+  }, [timestamps, onFieldChange]);
+
+  return (
+    <div className="max-w-[700px] mx-auto p-8 space-y-6">
+      {/* Video title */}
+      <div>
+        <input
+          type="text"
+          value={post.title || ''}
+          onChange={(e) => onFieldChange({ title: e.target.value })}
+          placeholder="Video title"
+          className="w-full text-2xl font-semibold bg-transparent border-none outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)]"
+        />
+        <div className="mt-1">
+          <CharCount current={post.title?.length || 0} limit={100} />
+        </div>
+      </div>
+
+      {/* Hook */}
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+          Hook (first 30 seconds)
+        </label>
+        <textarea
+          value={post.hook || ''}
+          onChange={(e) => onFieldChange({ hook: e.target.value })}
+          placeholder="What grabs attention in the first 30 seconds?"
+          rows={3}
+          className="w-full text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg p-3 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)] resize-y"
+        />
+      </div>
+
+      {/* Script body (rich text) */}
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+          Script
+        </label>
+        <EditorContent editor={editor} />
+      </div>
+
+      {/* Video description */}
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+          Video description
+        </label>
+        <textarea
+          value={post.description || ''}
+          onChange={(e) => onFieldChange({ description: e.target.value })}
+          placeholder="Video description for YouTube"
+          rows={4}
+          className="w-full text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg p-3 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)] resize-y"
+        />
+        <div className="mt-1 text-right">
+          <CharCount current={post.description?.length || 0} limit={5000} />
+        </div>
+      </div>
+
+      {/* Timestamps */}
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+          Timestamps
+        </label>
+        <div className="space-y-2">
+          {timestamps.map((ts, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={ts.time}
+                onChange={(e) => updateTimestamp(i, 'time', e.target.value)}
+                placeholder="0:00"
+                className="w-20 text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg px-2 py-1.5 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)] font-mono"
+              />
+              <input
+                type="text"
+                value={ts.label}
+                onChange={(e) => updateTimestamp(i, 'label', e.target.value)}
+                placeholder="Section label"
+                className="flex-1 text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg px-2 py-1.5 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)]"
+              />
+              <button
+                onClick={() => removeTimestamp(i)}
+                className="p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={addTimestamp}
+            className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
+          >
+            + Add timestamp
+          </button>
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+          Tags
+        </label>
+        <input
+          type="text"
+          value={(post.tags || []).join(', ')}
+          onChange={(e) => {
+            const tags = e.target.value.split(',').map((t) => t.trim()).filter(Boolean);
+            onFieldChange({ tags });
+          }}
+          placeholder="tag1, tag2, tag3"
+          className="w-full text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg px-3 py-2 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)]"
+        />
+      </div>
+
+      {/* Thumbnail placeholder */}
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+          Thumbnail
+        </label>
+        <div className="border border-dashed border-[var(--toolbar-border)] rounded-lg p-6 text-center text-sm text-[var(--muted-foreground)]">
+          Image upload coming soon
+        </div>
+      </div>
+    </div>
+  );
+}
