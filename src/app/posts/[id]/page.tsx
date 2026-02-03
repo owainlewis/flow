@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Editor } from '@tiptap/react';
-import { Feed, Post, ContentStatus, Platform, PLATFORM_CHAR_LIMITS, PLATFORM_LABELS, getContentLabel } from '../../types/content';
-import { loadFeed, saveFeed, countChars, formatDate, stripHtml, htmlToMarkdown, countPinnedForPlatform } from '../../utils/feed';
+import { Feed, Post, ContentStatus, Platform, PLATFORM_CHAR_LIMITS, PLATFORM_LABELS, getContentLabel, PLATFORM_CONTENT_LABELS } from '../../types/content';
+import { loadFeed, saveFeed, countChars, formatDate, stripHtml, htmlToMarkdown, countPinnedForPlatform, createDerivedPost } from '../../utils/feed';
+import { getPlaybook } from '../../utils/playbooks';
+import { loadApiKey } from '../../utils/chat';
 import AppLayout from '../../components/AppLayout';
 import StatusSelector from '../../components/StatusSelector';
 import ContentTypeSelector from '../../components/ContentTypeSelector';
@@ -29,6 +31,8 @@ export default function PostPage() {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [charCount, setCharCount] = useState(0);
+  const [showRepurposeMenu, setShowRepurposeMenu] = useState(false);
+  const [isRepurposing, setIsRepurposing] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const saveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const copyStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -198,6 +202,84 @@ export default function PostPage() {
     setShowDeleteDialog(false);
   }, []);
 
+  const handleRepurpose = useCallback(async (targetPlatform: Platform) => {
+    if (!post) return;
+    setShowRepurposeMenu(false);
+    setIsRepurposing(true);
+
+    try {
+      // Gather source content
+      const sourceBody = stripHtml(post.body || '');
+      const sourceParts: string[] = [];
+      if (post.title) sourceParts.push(`Title: ${post.title}`);
+      if (post.hook) sourceParts.push(`Hook: ${post.hook}`);
+      if (post.description) sourceParts.push(`Description: ${post.description}`);
+      if (sourceBody) sourceParts.push(`Content:\n${sourceBody}`);
+      const sourceText = sourceParts.join('\n\n');
+
+      // Try AI adaptation
+      let adaptedBody = '';
+      const apiKey = loadApiKey();
+      if (apiKey && sourceText.trim()) {
+        const playbook = getPlaybook(targetPlatform);
+        const targetLabel = PLATFORM_CONTENT_LABELS[targetPlatform].singular.toLowerCase();
+
+        try {
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: [{
+                role: 'user',
+                content: `Adapt the following content into a ${targetLabel} for ${PLATFORM_LABELS[targetPlatform]}. Output only the adapted content, no explanations or meta-commentary.\n\n${sourceText}`,
+              }],
+              systemPrompt: playbook.systemPrompt,
+              currentContent: '',
+              apiKey,
+            }),
+          });
+
+          if (response.ok && response.body) {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || !trimmed.startsWith('data: ')) continue;
+                const data = trimmed.slice(6);
+                if (data === '[DONE]') break;
+                try {
+                  const parsed = JSON.parse(data);
+                  if (parsed.text) adaptedBody += parsed.text;
+                } catch { /* skip malformed */ }
+              }
+            }
+          }
+        } catch {
+          // AI adaptation failed silently — create empty post
+        }
+      }
+
+      // Create derived post and save to feed
+      const derivedPost = createDerivedPost(post.id, targetPlatform, adaptedBody);
+      const feed = loadFeed();
+      feed.items.unshift(derivedPost);
+      saveFeed(feed);
+
+      // Navigate to the new post
+      router.push(`/posts/${derivedPost.id}`);
+    } finally {
+      setIsRepurposing(false);
+    }
+  }, [post, router]);
+
   const handleCopyPlaintext = useCallback(async () => {
     const editor = editorRef.current;
     if (!editor) return;
@@ -356,6 +438,51 @@ export default function PostPage() {
                 </button>
               );
             })()}
+            {/* Repurpose button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowRepurposeMenu((prev) => !prev)}
+                disabled={isRepurposing}
+                className={`p-2 rounded-lg hover:bg-[var(--button-hover)] transition-colors ${isRepurposing ? 'opacity-50' : ''}`}
+                title="Repurpose to another platform"
+              >
+                {isRepurposing ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="17 1 21 5 17 9" />
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                    <polyline points="7 23 3 19 7 15" />
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                  </svg>
+                )}
+              </button>
+              {showRepurposeMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowRepurposeMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--background)] border border-[var(--toolbar-border)] rounded-lg shadow-lg py-1 min-w-[180px]">
+                    <div className="px-3 py-1.5 text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider">
+                      Repurpose to
+                    </div>
+                    {(['linkedin', 'youtube', 'newsletter', 'twitter', 'instagram', 'tiktok'] as Platform[])
+                      .filter((p) => p !== post?.platform)
+                      .map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => handleRepurpose(p)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-[var(--button-hover)] transition-colors flex items-center gap-2"
+                        >
+                          <span>{PLATFORM_LABELS[p]}</span>
+                          <span className="text-xs text-[var(--muted-foreground)]">{PLATFORM_CONTENT_LABELS[p].singular}</span>
+                        </button>
+                      ))
+                    }
+                  </div>
+                </>
+              )}
+            </div>
             <button
               onClick={() => setIsChatOpen((prev) => !prev)}
               className={`p-2 rounded-lg hover:bg-[var(--button-hover)] transition-colors ${isChatOpen ? 'bg-[var(--button-hover)]' : ''}`}

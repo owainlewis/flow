@@ -259,3 +259,31 @@ export function getPinnedPosts(platform: Platform | null): Post[] {
 export function countPinnedForPlatform(items: AnyContent[], platform: Platform | null): number {
   return items.filter((item) => item.type === 'post' && !!(item as Post).pinned && (item as Post).platform === platform).length;
 }
+
+export function createDerivedPost(sourceId: string, targetPlatform: Platform, body: string = ''): Post {
+  const now = Date.now();
+  return {
+    id: generateId(),
+    type: 'post',
+    body,
+    status: 'idea',
+    platform: targetPlatform,
+    sourceId,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export function getDerivedPosts(sourceId: string): Post[] {
+  const feed = loadFeed();
+  return feed.items.filter(
+    (item): item is Post => item.type === 'post' && (item as Post).sourceId === sourceId
+  );
+}
+
+export function getSourcePost(sourceId: string): Post | undefined {
+  const feed = loadFeed();
+  return feed.items.find(
+    (item): item is Post => item.type === 'post' && item.id === sourceId
+  );
+}
