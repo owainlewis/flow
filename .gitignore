@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# agent logs
+.agent-logs/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
