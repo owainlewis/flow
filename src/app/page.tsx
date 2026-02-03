@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createPost, loadFeed, saveFeed } from './utils/feed';
 
 const THEME_KEY = 'contentflow-theme';
 
@@ -35,11 +36,15 @@ export default function LandingPage() {
   }, []);
 
   const handleStartWriting = useCallback(() => {
-    router.push('/notes/new');
+    const post = createPost();
+    const feed = loadFeed();
+    feed.items.unshift(post);
+    saveFeed(feed);
+    router.push(`/posts/${post.id}`);
   }, [router]);
 
-  const handleViewNotes = useCallback(() => {
-    router.push('/notes');
+  const handleViewPosts = useCallback(() => {
+    router.push('/posts');
   }, [router]);
 
   if (!isLoaded) {
@@ -66,8 +71,8 @@ export default function LandingPage() {
           ContentFlow
         </Link>
         <div className="flex items-center gap-4">
-          <Link href="/notes" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
-            Notes
+          <Link href="/posts" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
+            Posts
           </Link>
           <Link href="/weekly" className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
             Weekly
@@ -119,10 +124,10 @@ export default function LandingPage() {
               Start writing
             </button>
             <button
-              onClick={handleViewNotes}
+              onClick={handleViewPosts}
               className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
             >
-              Your notes &rarr;
+              Your posts &rarr;
             </button>
           </div>
         </div>
