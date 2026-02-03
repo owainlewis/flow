@@ -3,7 +3,15 @@
     "allow": [
       "Bash(bun run dev)",
       "Bash(kill:*)",
-      "WebFetch(domain:app.spiral.computer)"
+      "WebFetch(domain:app.spiral.computer)",
+      "Bash(bun run build:*)",
+      "Bash(bun add:*)",
+      "mcp__linear-server__list_issue_labels",
+      "mcp__linear-server__create_issue",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

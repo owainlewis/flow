@@ -28,30 +28,62 @@ This project uses a spec-driven workflow with Linear for tracking and GitHub for
 
 ### 1. Spec (Plan)
 
-Write a spec in `.ai/specs/<feature>.md` describing the change: what, why, and how. Specs should include:
+Write a spec in `specs/<feature>.md` describing the change. The spec is the persistent design record — it captures context that individual tickets can't. Specs should include:
 
-- **Goal** — what problem this solves
-- **Approach** — high-level design decisions
-- **Scope** — files affected, new files needed
-- **Tickets** — a list of discrete issues to create
+- **Why** — the motivation and problem being solved
+- **What** — the desired outcome and user-facing behaviour
+- **Constraints** — must-have, must-not, and out-of-scope boundaries
+- **Current state** — what exists today and how it works
+- **Tasks** — a list of discrete work items to create as tickets
+
+See `specs/export-markdown.md` for an example.
 
 ### 2. Tickets (Linear)
 
-Create Linear issues from the spec under the **Flow** project in the **Gradientwork** team. Each ticket should have:
+Create Linear issues from the spec under the **Flow** project in the **Gradientwork** team.
+
+**Parent issue:** Create one issue per spec with the spec summary as its description. This is the tracking hub — progress rolls up automatically from sub-issues.
+
+**Sub-issues:** Create one sub-issue per task from the spec, linked to the parent via `parentId`. Each sub-issue should have:
 
 - A clear title and description with file paths and acceptance criteria
-- Appropriate labels (e.g., `feature`, `bug`, `cleanup`, `tech-debt`)
-- Priority set (1=Urgent, 2=High, 3=Normal, 4=Low)
+- A reference to the spec file: `Spec: specs/<feature>.md`
+- Labels: `feature`, `bug`, `cleanup`, `tech-debt`, `dx`
+- Priority: 1=Urgent, 2=High, 3=Normal, 4=Low
 
 ### 3. Implement (Branch per ticket)
 
-For each Linear ticket:
+For each Linear sub-issue:
 
-1. Set the issue status to **In Progress**
-2. Create a branch using the Linear-suggested name: `owain/<issue-id>-<slug>`
-3. Implement the change
-4. Run `bun run build` to verify — never commit code that doesn't build
-5. Commit with the Linear issue ID in the message (e.g., `GRA-12`)
+1. Read the sub-issue **and its parent issue** to get full context (why, constraints, current state)
+2. Read the spec file referenced in the description if more detail is needed
+3. Set the sub-issue status to **In Progress**
+4. Create a branch following the naming convention below
+5. Implement the change
+6. Run `bun run build` to verify — never commit code that doesn't build
+7. Commit with the Linear issue ID in the message (e.g., `GRA-12`)
+
+#### Branch naming
+
+Format: `<prefix>/<issue-id>-<slug>`
+
+| Prefix | Use |
+|--------|-----|
+| `feature/` | New functionality |
+| `fix/` | Bug fixes |
+| `cleanup/` | Refactoring, dead code removal, tech debt |
+| `docs/` | Documentation-only changes |
+
+Examples:
+- `feature/gra-12-add-supabase-sync`
+- `fix/gra-15-broken-dark-mode-toggle`
+- `cleanup/gra-7-remove-unused-exports`
+
+#### Commit messages
+
+- Start with a verb in imperative mood (Add, Fix, Remove, Update)
+- Include the Linear issue ID at the end: `Remove unused exports (GRA-7)`
+- Keep the first line under 72 characters
 
 ### 4. Push & PR (GitHub)
 

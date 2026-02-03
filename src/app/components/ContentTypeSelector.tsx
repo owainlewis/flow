@@ -1,17 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Platform, PLATFORM_LABELS, UserFormats } from '../types/content';
-import { loadUserFormats, addUserFormat } from '../utils/feed';
+import { Platform, PLATFORM_LABELS } from '../types/content';
 
 interface ContentTypeSelectorProps {
   platform: Platform | null;
-  format: string | null;
   onPlatformChange: (platform: Platform | null) => void;
-  onFormatChange: (format: string | null) => void;
 }
 
-const PLATFORMS: Platform[] = ['linkedin', 'youtube', 'newsletter', 'twitter', 'other'];
+const PLATFORMS: Platform[] = ['linkedin', 'youtube', 'newsletter', 'twitter', 'instagram', 'tiktok'];
 
 const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
   linkedin: (
@@ -35,41 +32,31 @@ const PLATFORM_ICONS: Record<Platform, React.ReactNode> = {
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   ),
-  other: (
+  instagram: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 8v8M8 12h8" />
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  tiktok: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.13 2.56 5.67 5.7 5.67 3.14 0 5.68-2.55 5.68-5.68V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z" />
     </svg>
   ),
 };
 
 export default function ContentTypeSelector({
   platform,
-  format,
   onPlatformChange,
-  onFormatChange,
 }: ContentTypeSelectorProps) {
-  const [userFormats, setUserFormats] = useState<UserFormats | null>(null);
   const [showPlatformDropdown, setShowPlatformDropdown] = useState(false);
-  const [showFormatDropdown, setShowFormatDropdown] = useState(false);
-  const [newFormatInput, setNewFormatInput] = useState('');
-  const [showNewFormatInput, setShowNewFormatInput] = useState(false);
   const platformRef = useRef<HTMLDivElement>(null);
-  const formatRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setUserFormats(loadUserFormats());
-  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (platformRef.current && !platformRef.current.contains(event.target as Node)) {
         setShowPlatformDropdown(false);
-      }
-      if (formatRef.current && !formatRef.current.contains(event.target as Node)) {
-        setShowFormatDropdown(false);
-        setShowNewFormatInput(false);
-        setNewFormatInput('');
       }
     }
 
@@ -77,124 +64,69 @@ export default function ContentTypeSelector({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleAddNewFormat = () => {
-    if (!newFormatInput.trim() || !platform) return;
-    const updatedFormats = addUserFormat(platform, newFormatInput.trim());
-    setUserFormats(updatedFormats);
-    onFormatChange(newFormatInput.trim());
-    setNewFormatInput('');
-    setShowNewFormatInput(false);
-    setShowFormatDropdown(false);
-  };
-
-  const availableFormats = platform && userFormats ? userFormats[platform] : [];
-
   return (
-    <div className="flex items-center gap-3">
-      {/* Platform selector */}
-      <div className="relative" ref={platformRef}>
-        <button
-          onClick={() => setShowPlatformDropdown(!showPlatformDropdown)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[var(--toolbar-border)] rounded-lg hover:bg-[var(--muted)]/50 transition-colors"
-        >
-          {platform ? (
-            <>
-              <span className="text-[var(--muted-foreground)]">{PLATFORM_ICONS[platform]}</span>
-              <span>{PLATFORM_LABELS[platform]}</span>
-            </>
-          ) : (
-            <span className="text-[var(--muted-foreground)]">Select platform</span>
-          )}
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--muted-foreground)]">
-            <path d="M6 9l6 6 6-6" />
-          </svg>
-        </button>
-
-        {showPlatformDropdown && (
-          <div className="absolute top-full left-0 mt-1 bg-[var(--background)] border border-[var(--toolbar-border)] rounded-lg shadow-lg z-50 min-w-[160px]">
-            {PLATFORMS.map((p) => (
-              <button
-                key={p}
-                onClick={() => {
-                  onPlatformChange(p);
-                  if (platform !== p) onFormatChange(null);
-                  setShowPlatformDropdown(false);
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-[var(--muted)]/50 first:rounded-t-lg last:rounded-b-lg ${
-                  platform === p ? 'bg-[var(--muted)]/30' : ''
-                }`}
-              >
-                <span className="text-[var(--muted-foreground)]">{PLATFORM_ICONS[p]}</span>
-                <span>{PLATFORM_LABELS[p]}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Format selector (only shown when platform is selected) */}
-      {platform && (
-        <div className="relative" ref={formatRef}>
-          <button
-            onClick={() => setShowFormatDropdown(!showFormatDropdown)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[var(--toolbar-border)] rounded-lg hover:bg-[var(--muted)]/50 transition-colors"
-          >
-            <span className={format ? '' : 'text-[var(--muted-foreground)]'}>
-              {format || 'Select format'}
-            </span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--muted-foreground)]">
-              <path d="M6 9l6 6 6-6" />
+    <div className="relative" ref={platformRef}>
+      <button
+        onClick={() => setShowPlatformDropdown(!showPlatformDropdown)}
+        className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[var(--toolbar-border)] rounded-lg hover:bg-[var(--muted)]/50 transition-colors"
+      >
+        {platform ? (
+          <>
+            <span className="text-[var(--muted-foreground)]">{PLATFORM_ICONS[platform]}</span>
+            <span>{PLATFORM_LABELS[platform]}</span>
+          </>
+        ) : (
+          <>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--muted-foreground)]">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
             </svg>
+            <span>Doc</span>
+          </>
+        )}
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--muted-foreground)]">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {showPlatformDropdown && (
+        <div className="absolute top-full left-0 mt-1 bg-[var(--background)] border border-[var(--toolbar-border)] rounded-lg shadow-lg z-50 min-w-[160px]">
+          <button
+            onClick={() => {
+              onPlatformChange(null);
+              setShowPlatformDropdown(false);
+            }}
+            className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-[var(--muted)]/50 rounded-t-lg ${
+              platform === null ? 'bg-[var(--muted)]/30' : ''
+            }`}
+          >
+            <span className="text-[var(--muted-foreground)]">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+            </span>
+            <span>Doc</span>
           </button>
-
-          {showFormatDropdown && (
-            <div className="absolute top-full left-0 mt-1 bg-[var(--background)] border border-[var(--toolbar-border)] rounded-lg shadow-lg z-50 min-w-[160px]">
-              {availableFormats.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => {
-                    onFormatChange(f);
-                    setShowFormatDropdown(false);
-                  }}
-                  className={`w-full px-3 py-2 text-sm text-left hover:bg-[var(--muted)]/50 first:rounded-t-lg ${
-                    format === f ? 'bg-[var(--muted)]/30' : ''
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-
-              {showNewFormatInput ? (
-                <div className="px-2 py-2 border-t border-[var(--toolbar-border)]">
-                  <input
-                    type="text"
-                    value={newFormatInput}
-                    onChange={(e) => setNewFormatInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleAddNewFormat();
-                      if (e.key === 'Escape') {
-                        setShowNewFormatInput(false);
-                        setNewFormatInput('');
-                      }
-                    }}
-                    placeholder="Format name..."
-                    className="w-full px-2 py-1 text-sm border border-[var(--toolbar-border)] rounded bg-transparent focus:outline-none focus:ring-1 focus:ring-[var(--ring)]"
-                    autoFocus
-                  />
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowNewFormatInput(true)}
-                  className="w-full px-3 py-2 text-sm text-left text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50 border-t border-[var(--toolbar-border)] rounded-b-lg flex items-center gap-1"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                  Add new format
-                </button>
-              )}
-            </div>
-          )}
+          {PLATFORMS.map((p) => (
+            <button
+              key={p}
+              onClick={() => {
+                onPlatformChange(p);
+                setShowPlatformDropdown(false);
+              }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-[var(--muted)]/50 last:rounded-b-lg ${
+                platform === p ? 'bg-[var(--muted)]/30' : ''
+              }`}
+            >
+              <span className="text-[var(--muted-foreground)]">{PLATFORM_ICONS[p]}</span>
+              <span>{PLATFORM_LABELS[p]}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>

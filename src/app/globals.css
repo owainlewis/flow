@@ -6,6 +6,7 @@
 :root {
   --toolbar-bg: oklch(0.98 0 0);
   --toolbar-border: oklch(0.90 0 0);
+  --sidebar-bg: oklch(0.97 0 0);
   --button-hover: oklch(0.94 0 0);
   --placeholder-color: oklch(0.60 0 0);
   --radius: 0.625rem;
@@ -43,41 +44,42 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --toolbar-bg: oklch(0.20 0 0);
-  --toolbar-border: oklch(0.27 0 0);
-  --button-hover: oklch(0.27 0 0);
-  --placeholder-color: oklch(0.45 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.155 0.015 265);
+  --foreground: oklch(0.93 0.005 265);
+  --toolbar-bg: oklch(0.19 0.015 265);
+  --toolbar-border: oklch(0.25 0.015 265);
+  --sidebar-bg: oklch(0.14 0.02 265);
+  --button-hover: oklch(0.24 0.02 265);
+  --placeholder-color: oklch(0.45 0.01 265);
+  --card: oklch(0.19 0.015 265);
+  --card-foreground: oklch(0.93 0.005 265);
+  --popover: oklch(0.19 0.015 265);
+  --popover-foreground: oklch(0.93 0.005 265);
+  --primary: oklch(0.922 0.005 265);
+  --primary-foreground: oklch(0.19 0.015 265);
+  --secondary: oklch(0.22 0.015 265);
+  --secondary-foreground: oklch(0.93 0.005 265);
+  --muted: oklch(0.22 0.015 265);
+  --muted-foreground: oklch(0.65 0.01 265);
+  --accent: oklch(0.22 0.015 265);
+  --accent-foreground: oklch(0.93 0.005 265);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.556 0.01 265);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar: oklch(0.14 0.02 265);
+  --sidebar-foreground: oklch(0.93 0.005 265);
   --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-primary-foreground: oklch(0.93 0.005 265);
+  --sidebar-accent: oklch(0.22 0.015 265);
+  --sidebar-accent-foreground: oklch(0.93 0.005 265);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.556 0.01 265);
 }
 
 @theme inline {
@@ -127,7 +129,7 @@ body {
 
 /* TipTap Editor */
 .editor-content {
-  font-family: var(--font-serif), Georgia, 'Times New Roman', serif;
+  font-family: system-ui, -apple-system, sans-serif;
   font-size: 18px;
   line-height: 1.7;
   color: var(--foreground);
@@ -224,9 +226,86 @@ body {
   background: var(--button-hover);
 }
 
-/* Note Card */
-.note-card .editor-content {
+/* Post Card */
+.post-card .editor-content {
   min-height: auto;
+}
+
+/* Hide scrollbar for quick actions */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Chat markdown rendering */
+.chat-markdown p {
+  margin: 0.4em 0;
+}
+.chat-markdown p:first-child {
+  margin-top: 0;
+}
+.chat-markdown p:last-child {
+  margin-bottom: 0;
+}
+.chat-markdown strong {
+  font-weight: 700;
+}
+.chat-markdown em {
+  font-style: italic;
+}
+.chat-markdown ul {
+  list-style-type: disc;
+  padding-left: 1.25em;
+  margin: 0.4em 0;
+}
+.chat-markdown ol {
+  list-style-type: decimal;
+  padding-left: 1.25em;
+  margin: 0.4em 0;
+}
+.chat-markdown li {
+  margin: 0.15em 0;
+}
+.chat-markdown code {
+  font-size: 0.85em;
+  background: oklch(0 0 0 / 8%);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+.dark .chat-markdown code {
+  background: oklch(1 0 0 / 12%);
+}
+.chat-markdown pre {
+  margin: 0.4em 0;
+  padding: 0.5em;
+  border-radius: 4px;
+  overflow-x: auto;
+  background: oklch(0 0 0 / 6%);
+}
+.dark .chat-markdown pre {
+  background: oklch(1 0 0 / 8%);
+}
+.chat-markdown pre code {
+  background: none;
+  padding: 0;
+}
+.chat-markdown h1, .chat-markdown h2, .chat-markdown h3 {
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+}
+.chat-markdown blockquote {
+  border-left: 2px solid var(--toolbar-border);
+  padding-left: 0.75em;
+  margin: 0.4em 0;
+  color: var(--muted-foreground);
+}
+.chat-markdown hr {
+  border: none;
+  border-top: 1px solid var(--toolbar-border);
+  margin: 0.5em 0;
 }
 
 @layer base {

@@ -2,12 +2,12 @@
 
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { Trash2 } from 'lucide-react';
-import { Note, PLATFORM_LABELS } from '../types/content';
+import { Post, PLATFORM_LABELS } from '../types/content';
 import { formatDate } from '../utils/feed';
 import { StatusBadge } from './StatusSelector';
 
-interface NoteCardProps {
-  note: Note;
+interface PostCardProps {
+  post: Post;
   onClick: () => void;
   onDelete: (id: string) => void;
 }
@@ -46,16 +46,22 @@ const PLATFORM_ICONS: Record<string, React.ReactNode> = {
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   ),
-  other: (
+  instagram: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 8v8M8 12h8" />
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <circle cx="12" cy="12" r="5" />
+      <circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  ),
+  tiktok: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.13 2.56 5.67 5.7 5.67 3.14 0 5.68-2.55 5.68-5.68V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z" />
     </svg>
   ),
 };
 
-export default function NoteCard({ note, onClick, onDelete }: NoteCardProps) {
-  const plainText = note.body ? stripHtml(note.body) : '';
+export default function PostCard({ post, onClick, onDelete }: PostCardProps) {
+  const plainText = post.body ? stripHtml(post.body) : '';
   const preview = truncateText(plainText);
 
   return (
@@ -69,14 +75,14 @@ export default function NoteCard({ note, onClick, onDelete }: NoteCardProps) {
           onClick();
         }
       }}
-      className="note-card group relative cursor-pointer p-6 rounded-lg border border-[var(--toolbar-border)] hover:bg-[var(--button-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
+      className="post-card group relative cursor-pointer p-6 rounded-lg border border-[var(--toolbar-border)] hover:bg-[var(--button-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--ring)] focus:ring-offset-2 focus:ring-offset-[var(--background)]"
     >
       <AlertDialog.Root>
         <AlertDialog.Trigger asChild>
           <button
             onClick={(e) => e.stopPropagation()}
             className="absolute top-4 right-4 p-2 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
-            aria-label="Delete note"
+            aria-label="Delete post"
           >
             <Trash2 size={18} />
           </button>
@@ -88,10 +94,10 @@ export default function NoteCard({ note, onClick, onDelete }: NoteCardProps) {
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md rounded-lg bg-[var(--background)] border border-[var(--toolbar-border)] p-6 shadow-lg focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
           >
             <AlertDialog.Title className="text-lg font-semibold text-[var(--foreground)]">
-              Delete note?
+              Delete post?
             </AlertDialog.Title>
             <AlertDialog.Description className="mt-2 text-sm text-[var(--muted-foreground)]">
-              This action cannot be undone. This note will be permanently deleted.
+              This action cannot be undone. This post will be permanently deleted.
             </AlertDialog.Description>
             <div className="mt-6 flex justify-end gap-3">
               <AlertDialog.Cancel asChild>
@@ -101,7 +107,7 @@ export default function NoteCard({ note, onClick, onDelete }: NoteCardProps) {
               </AlertDialog.Cancel>
               <AlertDialog.Action asChild>
                 <button
-                  onClick={() => onDelete(note.id)}
+                  onClick={() => onDelete(post.id)}
                   className="px-4 py-2 text-sm font-medium rounded-md bg-red-500 text-white hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-[var(--background)]"
                 >
                   Delete
@@ -112,24 +118,27 @@ export default function NoteCard({ note, onClick, onDelete }: NoteCardProps) {
         </AlertDialog.Portal>
       </AlertDialog.Root>
 
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 pr-10">
         <div className="flex items-center gap-3">
           <span className="text-sm text-[var(--muted-foreground)]">
-            {formatDate(note.createdAt)}
+            {formatDate(post.createdAt)}
           </span>
-          {note.platform && (
+          {post.platform && (
             <span className="flex items-center gap-1 text-xs text-[var(--muted-foreground)]">
-              {PLATFORM_ICONS[note.platform]}
-              <span>{PLATFORM_LABELS[note.platform]}</span>
-              {note.format && <span className="text-[var(--muted-foreground)]/60">/ {note.format}</span>}
+              {PLATFORM_ICONS[post.platform]}
+              <span>{PLATFORM_LABELS[post.platform]}</span>
             </span>
           )}
         </div>
-        <StatusBadge status={note.status} size="sm" />
+        <StatusBadge status={post.status} size="sm" />
       </div>
 
+      {post.title && (
+        <p className="font-medium text-[var(--foreground)] mb-1 pr-10">{post.title}</p>
+      )}
+
       <p className="text-[var(--foreground)] leading-relaxed pr-10">
-        {preview || <span className="text-[var(--muted-foreground)]">Empty note</span>}
+        {preview || <span className="text-[var(--muted-foreground)]">Empty post</span>}
       </p>
     </div>
   );
