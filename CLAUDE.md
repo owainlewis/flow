@@ -33,7 +33,6 @@ Write a spec in `specs/<feature>.md` describing the change. The spec is the pers
 - **Why** — the motivation and problem being solved
 - **What** — the desired outcome and user-facing behaviour
 - **Constraints** — must-have, must-not, and out-of-scope boundaries
-- **Current state** — what exists today and how it works
 - **Tasks** — a list of discrete work items to create as tickets
 
 See `specs/export-markdown.md` for an example.

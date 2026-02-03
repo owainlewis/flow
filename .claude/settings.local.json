@@ -11,7 +11,11 @@
       "Bash(git checkout:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__linear-server__list_issues",
+      "mcp__linear-server__get_issue",
+      "mcp__linear-server__update_issue",
+      "Bash(gh pr view:*)"
     ]
   }
 }
