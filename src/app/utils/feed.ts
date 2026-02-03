@@ -138,18 +138,6 @@ export function filterByPlatform(items: AnyContent[], platform: Platform): AnyCo
   return items.filter((item) => item.type === 'post' && (item as Post).platform === platform);
 }
 
-export function getPostsForWeek(items: AnyContent[], weekStart: Date): AnyContent[] {
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 7);
-
-  return items.filter((item) => {
-    if (item.type !== 'post') return false;
-    const post = item as Post;
-    const itemDate = post.scheduledFor ? new Date(post.scheduledFor) : new Date(post.createdAt);
-    return itemDate >= weekStart && itemDate < weekEnd;
-  });
-}
-
 export function getWeekStart(date: Date = new Date()): Date {
   const d = new Date(date);
   const day = d.getDay();
@@ -175,27 +163,6 @@ export function formatWeekRange(weekStart: Date): string {
   return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
 }
 
-export function groupByPlatform(items: AnyContent[]): Record<Platform, Post[]> {
-  const groups: Record<Platform, Post[]> = {
-    linkedin: [],
-    youtube: [],
-    newsletter: [],
-    twitter: [],
-    instagram: [],
-    tiktok: [],
-  };
-
-  items.forEach((item) => {
-    if (item.type === 'post') {
-      const post = item as Post;
-      if (post.platform && post.platform in groups) {
-        groups[post.platform].push(post);
-      }
-    }
-  });
-
-  return groups;
-}
 
 // Cadence management
 export function loadCadence(): WeeklyCadence {
