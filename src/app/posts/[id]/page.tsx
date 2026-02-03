@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Feed, Post, ContentStatus, Platform, PLATFORM_FIELDS, PLATFORM_CHAR_LIMITS, PLATFORM_LABELS } from '../../types/content';
+import { Feed, Post, ContentStatus, Platform, PLATFORM_FIELDS, PLATFORM_CHAR_LIMITS, PLATFORM_LABELS, getContentLabel } from '../../types/content';
 import { loadFeed, saveFeed, countChars, formatDate, stripHtml, htmlToMarkdown, countPinnedForPlatform } from '../../utils/feed';
 import AppLayout from '../../components/AppLayout';
 import StatusSelector from '../../components/StatusSelector';
@@ -291,15 +291,15 @@ export default function PostPage() {
       <AppLayout>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-xl font-semibold mb-2">Post not found</h1>
+            <h1 className="text-xl font-semibold mb-2">Not found</h1>
             <p className="text-[var(--muted-foreground)] mb-4">
-              This post may have been deleted or the link is invalid.
+              This content may have been deleted or the link is invalid.
             </p>
             <button
               onClick={() => router.push('/posts')}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium border border-[var(--toolbar-border)] rounded-lg hover:bg-[var(--button-hover)] transition-colors"
             >
-              Return to posts
+              Return to content
             </button>
           </div>
         </div>
@@ -418,7 +418,7 @@ export default function PostPage() {
             <button
               onClick={handleDelete}
               className="p-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors"
-              title="Delete post"
+              title={`Delete ${getContentLabel(post?.platform ?? null).toLowerCase()}`}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="3 6 5 6 21 6" />
@@ -506,9 +506,9 @@ export default function PostPage() {
       {showDeleteDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[var(--background)] border border-[var(--toolbar-border)] rounded-lg p-6 max-w-sm mx-4 shadow-lg">
-            <h2 className="text-lg font-semibold mb-2">Delete post?</h2>
+            <h2 className="text-lg font-semibold mb-2">Delete {getContentLabel(post?.platform ?? null).toLowerCase()}?</h2>
             <p className="text-[var(--muted-foreground)] text-sm mb-4">
-              This action cannot be undone. The post will be permanently deleted.
+              This action cannot be undone. This {getContentLabel(post?.platform ?? null).toLowerCase()} will be permanently deleted.
             </p>
             <div className="flex gap-2 justify-end">
               <button

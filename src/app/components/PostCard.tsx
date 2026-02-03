@@ -2,7 +2,7 @@
 
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { Trash2 } from 'lucide-react';
-import { Post, PLATFORM_LABELS } from '../types/content';
+import { Post, PLATFORM_LABELS, getContentLabel } from '../types/content';
 import { formatDate, stripHtml, truncateText } from '../utils/feed';
 import { getPlatformIcons } from '../utils/platform-icons';
 import { StatusBadge } from './StatusSelector';
@@ -37,7 +37,7 @@ export default function PostCard({ post, onClick, onDelete }: PostCardProps) {
           <button
             onClick={(e) => e.stopPropagation()}
             className="absolute top-4 right-4 p-2 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
-            aria-label="Delete post"
+            aria-label={`Delete ${getContentLabel(post.platform).toLowerCase()}`}
           >
             <Trash2 size={18} />
           </button>
@@ -49,10 +49,10 @@ export default function PostCard({ post, onClick, onDelete }: PostCardProps) {
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md rounded-lg bg-[var(--background)] border border-[var(--toolbar-border)] p-6 shadow-lg focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
           >
             <AlertDialog.Title className="text-lg font-semibold text-[var(--foreground)]">
-              Delete post?
+              Delete {getContentLabel(post.platform).toLowerCase()}?
             </AlertDialog.Title>
             <AlertDialog.Description className="mt-2 text-sm text-[var(--muted-foreground)]">
-              This action cannot be undone. This post will be permanently deleted.
+              This action cannot be undone. This {getContentLabel(post.platform).toLowerCase()} will be permanently deleted.
             </AlertDialog.Description>
             <div className="mt-6 flex justify-end gap-3">
               <AlertDialog.Cancel asChild>
@@ -93,7 +93,7 @@ export default function PostCard({ post, onClick, onDelete }: PostCardProps) {
       )}
 
       <p className="text-[var(--foreground)] leading-relaxed pr-10">
-        {preview || <span className="text-[var(--muted-foreground)]">Empty post</span>}
+        {preview || <span className="text-[var(--muted-foreground)]">Empty {getContentLabel(post.platform).toLowerCase()}</span>}
       </p>
     </div>
   );

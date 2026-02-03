@@ -12,12 +12,25 @@ export interface Content {
 export interface Post extends Content {
   type: 'post';
   body: string;
+  format?: 'html' | 'plaintext';
   title?: string;
   description?: string;
   status: ContentStatus;
   platform: Platform | null;
   scheduledFor?: number;
   pinned?: boolean;
+
+  // Repurposing
+  sourceId?: string;
+
+  // Platform-specific structured fields
+  hook?: string;                   // YouTube/TikTok opening hook
+  subjectLine?: string;            // Newsletter subject
+  preheader?: string;              // Newsletter preheader
+  hashtags?: string[];             // Instagram/TikTok hashtags
+  tags?: string[];                 // YouTube tags
+  timestamps?: { time: string; label: string }[];  // YouTube timestamps
+  threadSegments?: string[];       // Twitter thread segments
 }
 
 export type AnyContent = Post;
@@ -73,3 +86,19 @@ export const DEFAULT_CADENCE: WeeklyCadence = {
 };
 
 export const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
+
+export const PLATFORM_CONTENT_LABELS: Record<Platform | 'doc', { singular: string; plural: string }> = {
+  linkedin: { singular: 'Post', plural: 'Posts' },
+  twitter: { singular: 'Tweet', plural: 'Tweets' },
+  youtube: { singular: 'Script', plural: 'Scripts' },
+  newsletter: { singular: 'Edition', plural: 'Editions' },
+  instagram: { singular: 'Post', plural: 'Posts' },
+  tiktok: { singular: 'Script', plural: 'Scripts' },
+  doc: { singular: 'Doc', plural: 'Docs' },
+};
+
+export function getContentLabel(platform: Platform | null, plural = false): string {
+  const key = platform ?? 'doc';
+  const labels = PLATFORM_CONTENT_LABELS[key];
+  return plural ? labels.plural : labels.singular;
+}
