@@ -133,11 +133,3 @@ export default function ContentTypeSelector({
   );
 }
 
-export function PlatformBadge({ platform }: { platform: Platform }) {
-  return (
-    <span className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)]">
-      {PLATFORM_ICONS[platform]}
-      <span>{PLATFORM_LABELS[platform]}</span>
-    </span>
-  );
-}
