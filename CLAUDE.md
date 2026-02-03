@@ -1,29 +1,13 @@
-<!-- OPENSPEC:START -->
-# OpenSpec Instructions
-
-These instructions are for AI assistants working in this project.
-
-Always open `@/openspec/AGENTS.md` when the request:
-- Mentions planning or proposals (words like proposal, spec, change, plan)
-- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
-- Sounds ambiguous and you need the authoritative spec before coding
-
-Use `@/openspec/AGENTS.md` to learn:
-- How to create and apply change proposals
-- Spec format and conventions
-- Project structure and guidelines
-
-Keep this managed block so 'openspec update' can refresh the instructions.
-
-<!-- OPENSPEC:END -->
-
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
-ContentFlow is a writing-first content creation tool for content creators built with Next.js 16. It features status workflow (idea/draft/ready/published), platform tagging (LinkedIn, YouTube, Newsletter, Twitter), and weekly content planning. Notes are stored in localStorage with optional Supabase sync.
+Flow is a writing-first content creation tool for content creators built with Next.js 16. It features status workflow (idea/draft/ready/published), platform tagging (LinkedIn, YouTube, Newsletter, Twitter), and weekly content planning. Posts are stored in localStorage with optional Supabase sync.
+
+- **Repo:** https://github.com/owainlewis/flow
+- **Linear project:** Flow (Gradientwork team)
 
 ## Commands
 
@@ -38,22 +22,68 @@ bun run test:headed  # Run tests in headed browser mode
 
 All commands are also available via `make` (e.g., `make dev`, `make test`).
 
+## Development Workflow
+
+This project uses a spec-driven workflow with Linear for tracking and GitHub for code review.
+
+### 1. Spec (Plan)
+
+Write a spec in `.ai/specs/<feature>.md` describing the change: what, why, and how. Specs should include:
+
+- **Goal** — what problem this solves
+- **Approach** — high-level design decisions
+- **Scope** — files affected, new files needed
+- **Tickets** — a list of discrete issues to create
+
+### 2. Tickets (Linear)
+
+Create Linear issues from the spec under the **Flow** project in the **Gradientwork** team. Each ticket should have:
+
+- A clear title and description with file paths and acceptance criteria
+- Appropriate labels (e.g., `feature`, `bug`, `cleanup`, `tech-debt`)
+- Priority set (1=Urgent, 2=High, 3=Normal, 4=Low)
+
+### 3. Implement (Branch per ticket)
+
+For each Linear ticket:
+
+1. Set the issue status to **In Progress**
+2. Create a branch using the Linear-suggested name: `owain/<issue-id>-<slug>`
+3. Implement the change
+4. Run `bun run build` to verify — never commit code that doesn't build
+5. Commit with the Linear issue ID in the message (e.g., `GRA-12`)
+
+### 4. Push & PR (GitHub)
+
+1. Push the branch to `origin`
+2. Create a PR with `gh pr create` linking back to the Linear issue
+3. PR description should summarize changes and include the Linear issue URL
+
+### 5. Merge & Close
+
+After review/merge:
+
+1. Mark the Linear issue as **Done**
+2. Delete the feature branch
+
 ## Architecture
 
 ### Routes (App Router)
-- `/` - Landing page with dark mode toggle
-- `/notes` - Notes list (feed view)
-- `/notes/new` - Create new note
-- `/notes/[id]` - View/edit existing note
+- `/` — Landing page
+- `/posts` — Posts list (feed view)
+- `/posts/[id]` — View/edit existing post
+- `/settings` — App settings
+- `/weekly` — Weekly content planner
 
 ### Key Components
-- `src/app/components/Editor.tsx` - TipTap-based rich text editor with click-outside-to-save behavior
-- `src/app/components/NoteCard.tsx` - Note preview card for the feed
-- `src/app/components/Toolbar.tsx` - Top navigation bar
+- `src/app/components/AppLayout.tsx` — Shell layout with sidebar
+- `src/app/components/Sidebar.tsx` — Navigation sidebar
+- `src/app/components/PostCard.tsx` — Post preview card for the feed
+- `src/app/components/ContentTypeSelector.tsx` — Platform picker dropdown
 
 ### Data Layer
-- `src/app/types/content.ts` - TypeScript types for Note, ContentStatus, Platform, Feed
-- `src/app/utils/feed.ts` - localStorage CRUD operations, utility functions, filter helpers
+- `src/app/types/content.ts` — TypeScript types for Post, ContentStatus, Platform, Feed
+- `src/app/utils/feed.ts` — localStorage CRUD operations, utility functions, filter helpers
 - Storage key: `contentflow-feed`
 - Formats storage: `contentflow-formats`
 
