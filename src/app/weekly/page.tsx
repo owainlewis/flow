@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Feed, Post, Platform, PLATFORM_LABELS, WeeklyCadence, DEFAULT_CADENCE, DAY_LABELS } from '../types/content';
-import { loadFeed, saveFeed, getWeekStart, formatWeekRange, loadCadence, createPostWithMeta, getScheduledPostsForPlatformDay, stripHtml, truncateText } from '../utils/feed';
+import { loadFeed, saveFeed, getWeekStart, formatWeekRange, loadCadence, createPostWithMeta, getScheduledPostsForPlatformDay, stripHtml, truncateText, getDerivedPosts } from '../utils/feed';
 import { getPlatformIcons } from '../utils/platform-icons';
 import AppLayout from '../components/AppLayout';
 import { StatusBadge } from '../components/StatusSelector';
@@ -196,21 +196,41 @@ export default function WeeklyPage() {
                             today ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
                           }`}
                         >
-                          {post ? (
-                            <button
-                              onClick={() => handlePostClick(post.id)}
-                              className="w-full h-full text-left p-2 rounded border border-[var(--toolbar-border)] hover:bg-[var(--button-hover)] transition-colors"
-                            >
-                              <div className="flex items-center gap-1 mb-1">
-                                <StatusBadge status={post.status} size="sm" />
-                              </div>
-                              <p className="text-xs leading-snug text-[var(--foreground)]">
-                                {truncateText(stripHtml(post.body), 60) || (
-                                  <span className="text-[var(--muted-foreground)]">Empty</span>
-                                )}
-                              </p>
-                            </button>
-                          ) : isActive ? (
+                          {post ? (() => {
+                            const derivatives = getDerivedPosts(post.id);
+                            const pendingDerivatives = derivatives.filter((d) => d.status !== 'published');
+                            return (
+                              <button
+                                onClick={() => handlePostClick(post.id)}
+                                className="w-full h-full text-left p-2 rounded border border-[var(--toolbar-border)] hover:bg-[var(--button-hover)] transition-colors"
+                              >
+                                <div className="flex items-center gap-1 mb-1">
+                                  <StatusBadge status={post.status} size="sm" />
+                                  {derivatives.length > 0 && (
+                                    <span
+                                      className={`inline-flex items-center gap-0.5 text-xs ${
+                                        post.status === 'published' && pendingDerivatives.length > 0
+                                          ? 'text-amber-600 dark:text-amber-400'
+                                          : 'text-[var(--muted-foreground)]'
+                                      }`}
+                                      title={`${derivatives.length} derived${pendingDerivatives.length > 0 ? ` (${pendingDerivatives.length} pending)` : ''}`}
+                                    >
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <polyline points="17 1 21 5 17 9" />
+                                        <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                                      </svg>
+                                      {derivatives.length}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs leading-snug text-[var(--foreground)]">
+                                  {truncateText(stripHtml(post.body), 60) || (
+                                    <span className="text-[var(--muted-foreground)]">Empty</span>
+                                  )}
+                                </p>
+                              </button>
+                            );
+                          })() : isActive ? (
                             <button
                               onClick={() => handleEmptySlotClick(platform, date.getTime())}
                               className="w-full h-full min-h-[60px] rounded border-2 border-dashed border-[var(--toolbar-border)] hover:border-[var(--muted-foreground)] hover:bg-[var(--button-hover)] transition-colors flex items-center justify-center group"

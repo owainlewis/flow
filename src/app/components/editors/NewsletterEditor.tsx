@@ -6,6 +6,8 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { PlatformEditorProps } from './types';
 import { CharCount } from './CharCount';
+import MediaUpload from '../MediaUpload';
+import { MediaAttachment } from '../../types/content';
 
 export default function NewsletterEditor({ post, onBodyChange, onFieldChange, onEditorReady, initialBody }: PlatformEditorProps) {
   const initializedRef = useRef(false);
@@ -79,10 +81,16 @@ export default function NewsletterEditor({ post, onBodyChange, onFieldChange, on
         </div>
       </div>
 
-      {/* Header image placeholder */}
-      <div className="border border-dashed border-[var(--toolbar-border)] rounded-lg p-4 text-center text-sm text-[var(--muted-foreground)]">
-        Header image coming soon
-      </div>
+      {/* Header image */}
+      <MediaUpload
+        mode="single"
+        media={(post.media || []).filter((m: MediaAttachment) => m.caption === 'header')}
+        onChange={(media: MediaAttachment[]) => {
+          const other = (post.media || []).filter((m: MediaAttachment) => m.caption !== 'header');
+          onFieldChange({ media: [...other, ...media.map((m: MediaAttachment) => ({ ...m, caption: 'header' }))] });
+        }}
+        label="Header image"
+      />
 
       {/* Body (rich text) */}
       <EditorContent editor={editor} />

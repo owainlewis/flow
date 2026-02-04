@@ -6,6 +6,8 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import { PlatformEditorProps } from './types';
 import { CharCount } from './CharCount';
+import MediaUpload from '../MediaUpload';
+import { MediaAttachment } from '../../types/content';
 
 export default function YouTubeEditor({ post, onBodyChange, onFieldChange, onEditorReady, initialBody }: PlatformEditorProps) {
   const initializedRef = useRef(false);
@@ -179,15 +181,16 @@ export default function YouTubeEditor({ post, onBodyChange, onFieldChange, onEdi
         />
       </div>
 
-      {/* Thumbnail placeholder */}
-      <div>
-        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
-          Thumbnail
-        </label>
-        <div className="border border-dashed border-[var(--toolbar-border)] rounded-lg p-6 text-center text-sm text-[var(--muted-foreground)]">
-          Image upload coming soon
-        </div>
-      </div>
+      {/* Thumbnail */}
+      <MediaUpload
+        mode="single"
+        media={(post.media || []).filter((m: MediaAttachment) => m.caption === 'thumbnail')}
+        onChange={(media: MediaAttachment[]) => {
+          const other = (post.media || []).filter((m: MediaAttachment) => m.caption !== 'thumbnail');
+          onFieldChange({ media: [...other, ...media.map((m: MediaAttachment) => ({ ...m, caption: 'thumbnail' }))] });
+        }}
+        label="Thumbnail"
+      />
     </div>
   );
 }

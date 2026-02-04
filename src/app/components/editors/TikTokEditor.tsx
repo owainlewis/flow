@@ -2,6 +2,8 @@
 
 import { PlatformEditorProps } from './types';
 import { CharCount } from './CharCount';
+import MediaUpload from '../MediaUpload';
+import { MediaAttachment } from '../../types/content';
 
 const CAPTION_LIMIT = 2200;
 
@@ -72,15 +74,13 @@ export default function TikTokEditor({ post, onBodyChange, onFieldChange }: Plat
         />
       </div>
 
-      {/* Cover image placeholder */}
-      <div>
-        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
-          Cover image
-        </label>
-        <div className="border border-dashed border-[var(--toolbar-border)] rounded-lg p-6 text-center text-sm text-[var(--muted-foreground)]">
-          Image upload coming soon
-        </div>
-      </div>
+      {/* Cover image */}
+      <MediaUpload
+        mode="single"
+        media={post.media || []}
+        onChange={(media: MediaAttachment[]) => onFieldChange({ media })}
+        label="Cover image"
+      />
     </div>
   );
 }

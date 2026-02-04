@@ -3,6 +3,8 @@
 import { useState, useCallback } from 'react';
 import { PlatformEditorProps } from './types';
 import { CharCount } from './CharCount';
+import MediaUpload from '../MediaUpload';
+import { MediaAttachment } from '../../types/content';
 
 const CAPTION_LIMIT = 2200;
 
@@ -63,6 +65,16 @@ export default function InstagramEditor({ post, onBodyChange, onFieldChange }: P
           <CharCount current={(post.body?.replace(/<[^>]*>/g, '') || '').length} limit={CAPTION_LIMIT} />
         </div>
       </div>
+
+      {/* Post image (single mode) */}
+      {!isCarouselMode && (
+        <MediaUpload
+          mode="single"
+          media={post.media || []}
+          onChange={(media: MediaAttachment[]) => onFieldChange({ media })}
+          label="Post image"
+        />
+      )}
 
       {/* Hashtags */}
       <div>
@@ -152,9 +164,16 @@ export default function InstagramEditor({ post, onBodyChange, onFieldChange }: P
                   </button>
                 </div>
               </div>
-              {/* Image placeholder */}
-              <div className="border border-dashed border-[var(--toolbar-border)] rounded-md p-4 mb-2 text-center text-xs text-[var(--muted-foreground)]">
-                Image upload coming soon
+              {/* Slide image */}
+              <div className="mb-2">
+                <MediaUpload
+                  mode="single"
+                  media={(post.media || []).filter((m: MediaAttachment) => m.caption === `slide-${i}`)}
+                  onChange={(media: MediaAttachment[]) => {
+                    const other = (post.media || []).filter((m: MediaAttachment) => m.caption !== `slide-${i}`);
+                    onFieldChange({ media: [...other, ...media.map((m: MediaAttachment) => ({ ...m, caption: `slide-${i}` }))] });
+                  }}
+                />
               </div>
               <input
                 type="text"
