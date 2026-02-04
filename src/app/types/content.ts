@@ -31,6 +31,20 @@ export interface Post extends Content {
   tags?: string[];                 // YouTube tags
   timestamps?: { time: string; label: string }[];  // YouTube timestamps
   threadSegments?: string[];       // Twitter thread segments
+
+  // Media
+  media?: MediaAttachment[];
+}
+
+export interface MediaAttachment {
+  id: string;
+  type: 'image' | 'video-link';
+  url: string;
+  thumbnailUrl?: string;
+  caption?: string;
+  order: number;
+  mimeType?: string;
+  sizeBytes?: number;
 }
 
 export type AnyContent = Post;

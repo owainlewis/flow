@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Editor } from '@tiptap/react';
 import { Feed, Post, ContentStatus, Platform, PLATFORM_CHAR_LIMITS, PLATFORM_LABELS, getContentLabel, PLATFORM_CONTENT_LABELS } from '../../types/content';
-import { loadFeed, saveFeed, countChars, formatDate, stripHtml, htmlToMarkdown, countPinnedForPlatform, createDerivedPost } from '../../utils/feed';
+import { loadFeed, saveFeed, countChars, formatDate, stripHtml, htmlToMarkdown, countPinnedForPlatform, createDerivedPost, getSourcePost } from '../../utils/feed';
 import { getPlaybook } from '../../utils/playbooks';
 import { loadApiKey } from '../../utils/chat';
 import AppLayout from '../../components/AppLayout';
@@ -13,6 +13,8 @@ import ContentTypeSelector from '../../components/ContentTypeSelector';
 import ChatPanel from '../../components/ChatPanel';
 import { useChat } from '../../hooks/useChat';
 import { DocEditor, YouTubeEditor, NewsletterEditor, TwitterEditor, InstagramEditor, TikTokEditor } from '../../components/editors';
+import SourcePanel from '../../components/SourcePanel';
+import ContentTree, { getRelatedPosts } from '../../components/ContentTree';
 import { marked } from 'marked';
 
 const THEME_KEY = 'contentflow-theme';
@@ -535,6 +537,19 @@ export default function PostPage() {
         {/* Content area with optional chat panel */}
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 overflow-auto">
+            {/* Source panel and content tree */}
+            {post && (post.sourceId || getRelatedPosts(post.id).length > 1) && (
+              <div className="max-w-3xl mx-auto px-6 pt-6">
+                {post.sourceId && (() => {
+                  const source = getSourcePost(post.sourceId);
+                  return source ? <SourcePanel source={source} /> : null;
+                })()}
+                {(() => {
+                  const related = getRelatedPosts(post.id);
+                  return related.length > 1 ? <ContentTree currentPostId={post.id} posts={related} /> : null;
+                })()}
+              </div>
+            )}
             {renderEditor()}
           </div>
 
