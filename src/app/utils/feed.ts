@@ -138,6 +138,15 @@ export function deletePost(id: string): void {
   saveFeed(feed);
 }
 
+export function reschedulePost(postId: string, newScheduledFor: number): void {
+  const feed = loadFeed();
+  const post = feed.items.find((item): item is Post => item.type === 'post' && item.id === postId);
+  if (!post) return;
+  post.scheduledFor = newScheduledFor;
+  post.updatedAt = Date.now();
+  saveFeed(feed);
+}
+
 // Filter helpers
 export function filterByStatus(items: AnyContent[], status: ContentStatus): AnyContent[] {
   return items.filter((item) => item.type === 'post' && (item as Post).status === status);
