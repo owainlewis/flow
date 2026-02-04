@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Feed, Post, Platform, PLATFORM_LABELS, WeeklyCadence, DEFAULT_CADENCE, DAY_LABELS } from '../types/content';
-import { loadFeed, saveFeed, getWeekStart, formatWeekRange, loadCadence, createPostWithMeta, getScheduledPostsForPlatformDay, stripHtml, truncateText, getDerivedPosts } from '../utils/feed';
+import { loadFeed, saveFeed, getWeekStart, formatWeekRange, loadCadence, createPostWithMeta, getScheduledPostsForPlatformDay, stripHtml, truncateText, getDerivedPosts, reschedulePost } from '../utils/feed';
 import { getPlatformIcons } from '../utils/platform-icons';
 import AppLayout from '../components/AppLayout';
 import { StatusBadge } from '../components/StatusSelector';
@@ -37,6 +37,8 @@ export default function WeeklyPage() {
   const [cadence, setCadence] = useState<WeeklyCadence>(DEFAULT_CADENCE);
   const [isLoaded, setIsLoaded] = useState(false);
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(getWeekStart());
+  const [dragSource, setDragSource] = useState<{ postId: string; platform: Platform } | null>(null);
+  const [dragOverCell, setDragOverCell] = useState<string | null>(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem(THEME_KEY);
@@ -77,6 +79,43 @@ export default function WeeklyPage() {
     setFeed(currentFeed);
     router.push(`/posts/${post.id}`);
   }, [router]);
+
+  const handleDragStart = useCallback((e: React.DragEvent, postId: string, platform: Platform) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify({ postId, platform }));
+    setDragSource({ postId, platform });
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    setDragSource(null);
+    setDragOverCell(null);
+  }, []);
+
+  const handleCellDragOver = useCallback((e: React.DragEvent, platform: Platform, cellKey: string) => {
+    if (!dragSource || dragSource.platform !== platform) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverCell(cellKey);
+  }, [dragSource]);
+
+  const handleCellDragLeave = useCallback(() => {
+    setDragOverCell(null);
+  }, []);
+
+  const handleCellDrop = useCallback((e: React.DragEvent, platform: Platform, dayTimestamp: number) => {
+    e.preventDefault();
+    setDragOverCell(null);
+    setDragSource(null);
+
+    try {
+      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      if (data.platform !== platform) return;
+      reschedulePost(data.postId, dayTimestamp);
+      setFeed(loadFeed());
+    } catch {
+      // Invalid data — ignore
+    }
+  }, []);
 
   if (!isLoaded) {
     return null;
@@ -188,21 +227,32 @@ export default function WeeklyPage() {
                       const post = getScheduledPostsForPlatformDay(feed.items, platform, date)[0] ?? null;
                       const isActive = cadence[platform][dayIndex];
                       const today = isToday(date);
+                      const cellKey = `${platform}-${dayIndex}`;
+                      const isDragOver = dragOverCell === cellKey;
 
                       return (
                         <div
                           key={dayIndex}
-                          className={`border-b border-l border-[var(--toolbar-border)] p-1.5 min-h-[80px] ${
+                          className={`border-b border-l border-[var(--toolbar-border)] p-1.5 min-h-[80px] transition-colors ${
                             today ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''
-                          }`}
+                          } ${isDragOver ? 'bg-blue-100/60 dark:bg-blue-800/30' : ''}`}
+                          onDragOver={(e) => handleCellDragOver(e, platform, cellKey)}
+                          onDragLeave={handleCellDragLeave}
+                          onDrop={(e) => handleCellDrop(e, platform, date.getTime())}
                         >
                           {post ? (() => {
                             const derivatives = getDerivedPosts(post.id);
                             const pendingDerivatives = derivatives.filter((d) => d.status !== 'published');
+                            const isDragging = dragSource?.postId === post.id;
                             return (
                               <button
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, post.id, platform)}
+                                onDragEnd={handleDragEnd}
                                 onClick={() => handlePostClick(post.id)}
-                                className="w-full h-full text-left p-2 rounded border border-[var(--toolbar-border)] hover:bg-[var(--button-hover)] transition-colors"
+                                className={`w-full h-full text-left p-2 rounded border border-[var(--toolbar-border)] hover:bg-[var(--button-hover)] transition-colors cursor-grab active:cursor-grabbing ${
+                                  isDragging ? 'opacity-40' : ''
+                                }`}
                               >
                                 <div className="flex items-center gap-1 mb-1">
                                   <StatusBadge status={post.status} size="sm" />
