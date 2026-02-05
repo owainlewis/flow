@@ -1,29 +1,32 @@
-# Cleartype
+# Flow
 
-A minimalist, distraction-free text editor that runs entirely in your browser.
+A writing-first content creation tool for content creators. Plan, draft, and publish across platforms — all from one place.
 
 ## Features
 
-- Clean, focused writing environment
-- Multiple documents with sidebar navigation
+- Distraction-free writing with a rich text editor
+- Status workflow: idea, draft, ready, published
+- Platform tagging: LinkedIn, YouTube, Newsletter, Twitter
+- Weekly content planner with drag-and-drop scheduling
 - Auto-saves to local storage
 - Light and dark modes
-- Word and character count
 - No account required
 
 ## Development
 
 ```bash
 bun install
-bun dev
+bun run dev
 ```
 
-## Deployment
-
-Configured for static export. Deploy to Vercel, Netlify, or any static host.
+## Build
 
 ```bash
 bun run build
 ```
 
-Output is in the `out/` directory.
+## Testing
+
+```bash
+bun run test
+```
