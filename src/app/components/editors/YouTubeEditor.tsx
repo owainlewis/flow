@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -51,23 +51,6 @@ export default function YouTubeEditor({ post, onBodyChange, onFieldChange, onEdi
     }
   }, [editor, initialBody]);
 
-  const timestamps = post.timestamps || [];
-
-  const addTimestamp = useCallback(() => {
-    onFieldChange({ timestamps: [...timestamps, { time: '', label: '' }] });
-  }, [timestamps, onFieldChange]);
-
-  const updateTimestamp = useCallback((index: number, field: 'time' | 'label', value: string) => {
-    const updated = timestamps.map((ts, i) =>
-      i === index ? { ...ts, [field]: value } : ts
-    );
-    onFieldChange({ timestamps: updated });
-  }, [timestamps, onFieldChange]);
-
-  const removeTimestamp = useCallback((index: number) => {
-    onFieldChange({ timestamps: timestamps.filter((_, i) => i !== index) });
-  }, [timestamps, onFieldChange]);
-
   return (
     <div className="max-w-[700px] mx-auto p-8 space-y-6">
       {/* Video title */}
@@ -81,6 +64,34 @@ export default function YouTubeEditor({ post, onBodyChange, onFieldChange, onEdi
         />
         <div className="mt-1">
           <CharCount current={post.title?.length || 0} limit={100} />
+        </div>
+      </div>
+
+      {/* Thumbnail */}
+      <MediaUpload
+        mode="single"
+        media={(post.media || []).filter((m: MediaAttachment) => m.caption === 'thumbnail')}
+        onChange={(media: MediaAttachment[]) => {
+          const other = (post.media || []).filter((m: MediaAttachment) => m.caption !== 'thumbnail');
+          onFieldChange({ media: [...other, ...media.map((m: MediaAttachment) => ({ ...m, caption: 'thumbnail' }))] });
+        }}
+        label="Thumbnail"
+      />
+
+      {/* Video description */}
+      <div>
+        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
+          Video description
+        </label>
+        <textarea
+          value={post.description || ''}
+          onChange={(e) => onFieldChange({ description: e.target.value })}
+          placeholder="Video description for YouTube"
+          rows={4}
+          className="w-full text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg p-3 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)] resize-y"
+        />
+        <div className="mt-1 text-right">
+          <CharCount current={post.description?.length || 0} limit={5000} />
         </div>
       </div>
 
@@ -105,92 +116,6 @@ export default function YouTubeEditor({ post, onBodyChange, onFieldChange, onEdi
         </label>
         <EditorContent editor={editor} />
       </div>
-
-      {/* Video description */}
-      <div>
-        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
-          Video description
-        </label>
-        <textarea
-          value={post.description || ''}
-          onChange={(e) => onFieldChange({ description: e.target.value })}
-          placeholder="Video description for YouTube"
-          rows={4}
-          className="w-full text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg p-3 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)] resize-y"
-        />
-        <div className="mt-1 text-right">
-          <CharCount current={post.description?.length || 0} limit={5000} />
-        </div>
-      </div>
-
-      {/* Timestamps */}
-      <div>
-        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
-          Timestamps
-        </label>
-        <div className="space-y-2">
-          {timestamps.map((ts, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <input
-                type="text"
-                value={ts.time}
-                onChange={(e) => updateTimestamp(i, 'time', e.target.value)}
-                placeholder="0:00"
-                className="w-20 text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg px-2 py-1.5 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)] font-mono"
-              />
-              <input
-                type="text"
-                value={ts.label}
-                onChange={(e) => updateTimestamp(i, 'label', e.target.value)}
-                placeholder="Section label"
-                className="flex-1 text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg px-2 py-1.5 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)]"
-              />
-              <button
-                onClick={() => removeTimestamp(i)}
-                className="p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-500/10 transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-          ))}
-          <button
-            onClick={addTimestamp}
-            className="text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-          >
-            + Add timestamp
-          </button>
-        </div>
-      </div>
-
-      {/* Tags */}
-      <div>
-        <label className="block text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wider mb-2">
-          Tags
-        </label>
-        <input
-          type="text"
-          value={(post.tags || []).join(', ')}
-          onChange={(e) => {
-            const tags = e.target.value.split(',').map((t) => t.trim()).filter(Boolean);
-            onFieldChange({ tags });
-          }}
-          placeholder="tag1, tag2, tag3"
-          className="w-full text-sm bg-transparent border border-[var(--toolbar-border)] rounded-lg px-3 py-2 outline-none placeholder:text-[var(--placeholder-color)] text-[var(--foreground)]"
-        />
-      </div>
-
-      {/* Thumbnail */}
-      <MediaUpload
-        mode="single"
-        media={(post.media || []).filter((m: MediaAttachment) => m.caption === 'thumbnail')}
-        onChange={(media: MediaAttachment[]) => {
-          const other = (post.media || []).filter((m: MediaAttachment) => m.caption !== 'thumbnail');
-          onFieldChange({ media: [...other, ...media.map((m: MediaAttachment) => ({ ...m, caption: 'thumbnail' }))] });
-        }}
-        label="Thumbnail"
-      />
     </div>
   );
 }
