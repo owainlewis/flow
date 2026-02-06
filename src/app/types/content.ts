@@ -4,7 +4,7 @@ export type Platform = 'linkedin' | 'youtube' | 'newsletter' | 'twitter' | 'inst
 
 export interface Content {
   id: string;
-  type: 'post' | 'image' | 'link' | 'video';
+  type: 'post';
   createdAt: number;
   updatedAt: number;
 }
@@ -47,10 +47,8 @@ export interface MediaAttachment {
   sizeBytes?: number;
 }
 
-export type AnyContent = Post;
-
 export interface Feed {
-  items: AnyContent[];
+  items: Post[];
 }
 
 

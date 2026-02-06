@@ -89,9 +89,7 @@ export default function PostPage() {
     const feed = loadFeed();
     feedRef.current = feed;
 
-    const foundPost = feed.items.find(
-      (item) => item.id === postId && item.type === 'post'
-    ) as Post | undefined;
+    const foundPost = feed.items.find((item) => item.id === postId);
 
     if (foundPost) {
       setPost(foundPost);
@@ -115,7 +113,7 @@ export default function PostPage() {
   const saveMetadata = useCallback((updates: Partial<Post>) => {
     const feed = loadFeed();
     const updatedItems = feed.items.map((item) =>
-      item.id === postId && item.type === 'post'
+      item.id === postId
         ? { ...item, ...updates, updatedAt: Date.now() }
         : item
     );
@@ -142,7 +140,7 @@ export default function PostPage() {
     metaSaveTimeoutRef.current = setTimeout(() => {
       const feed = loadFeed();
       const updatedItems = feed.items.map((item) =>
-        item.id === postId && item.type === 'post'
+        item.id === postId
           ? { ...item, ...updates, updatedAt: Date.now() }
           : item
       );
@@ -166,7 +164,7 @@ export default function PostPage() {
     saveTimeoutRef.current = setTimeout(() => {
       const feed = loadFeed();
       const updatedItems = feed.items.map((item) =>
-        item.id === postId && item.type === 'post'
+        item.id === postId
           ? { ...item, body: content, updatedAt: Date.now() }
           : item
       );

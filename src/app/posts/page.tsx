@@ -53,7 +53,7 @@ function PostsContent() {
   // Apply filters
   let filteredItems = feed.items;
   if (isDocFilter) {
-    filteredItems = filteredItems.filter((item) => item.type === 'post' && (item as Post).platform === null);
+    filteredItems = filteredItems.filter((item) => item.platform === null);
   } else if (platformFromUrl) {
     filteredItems = filterByPlatform(filteredItems, platformFromUrl);
   }
@@ -117,20 +117,14 @@ function PostsContent() {
         </div>
       ) : (
         <div className="space-y-4">
-          {sortedItems.map((item) => {
-            if (item.type === 'post') {
-              const post = item as Post;
-              return (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  onClick={() => handlePostClick(post.id)}
-                  onDelete={handleDelete}
-                />
-              );
-            }
-            return null;
-          })}
+          {sortedItems.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onClick={() => handlePostClick(post.id)}
+              onDelete={handleDelete}
+            />
+          ))}
         </div>
       )}
     </div>
