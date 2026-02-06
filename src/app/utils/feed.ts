@@ -1,5 +1,5 @@
 import TurndownService from 'turndown';
-import { Feed, Post, AnyContent, ContentStatus, Platform, WeeklyCadence, DEFAULT_CADENCE } from '../types/content';
+import { Feed, Post, ContentStatus, Platform, WeeklyCadence, DEFAULT_CADENCE } from '../types/content';
 
 const STORAGE_KEY = 'contentflow-feed';
 const CADENCE_KEY = 'contentflow-cadence';
@@ -42,9 +42,9 @@ export function loadFeed(): Feed {
     try {
       const feed = JSON.parse(stored);
       // Migrate existing items (including old type: 'note') to type: 'post'
-      const migratedItems = feed.items.map((item: AnyContent & { type: string }) => {
+      const migratedItems = feed.items.map((item: Post & { type: string }) => {
         if (item.type === 'post' || item.type === 'note') {
-          return migratePost(item as Post);
+          return migratePost(item);
         }
         return item;
       });
@@ -128,7 +128,7 @@ export function formatDate(timestamp: number): string {
   });
 }
 
-export function sortByNewest(items: AnyContent[]): AnyContent[] {
+export function sortByNewest(items: Post[]): Post[] {
   return [...items].sort((a, b) => b.createdAt - a.createdAt);
 }
 
@@ -140,7 +140,7 @@ export function deletePost(id: string): void {
 
 export function reschedulePost(postId: string, newScheduledFor: number): void {
   const feed = loadFeed();
-  const post = feed.items.find((item): item is Post => item.type === 'post' && item.id === postId);
+  const post = feed.items.find((item) => item.id === postId);
   if (!post) return;
   post.scheduledFor = newScheduledFor;
   post.updatedAt = Date.now();
@@ -148,12 +148,12 @@ export function reschedulePost(postId: string, newScheduledFor: number): void {
 }
 
 // Filter helpers
-export function filterByStatus(items: AnyContent[], status: ContentStatus): AnyContent[] {
-  return items.filter((item) => item.type === 'post' && (item as Post).status === status);
+export function filterByStatus(items: Post[], status: ContentStatus): Post[] {
+  return items.filter((item) => item.status === status);
 }
 
-export function filterByPlatform(items: AnyContent[], platform: Platform): AnyContent[] {
-  return items.filter((item) => item.type === 'post' && (item as Post).platform === platform);
+export function filterByPlatform(items: Post[], platform: Platform): Post[] {
+  return items.filter((item) => item.platform === platform);
 }
 
 export function getWeekStart(date: Date = new Date()): Date {
@@ -235,16 +235,14 @@ export function createPostWithMeta({ body, platform, scheduledFor }: { body?: st
   };
 }
 
-export function getScheduledPostsForPlatformDay(items: AnyContent[], platform: Platform, dayStart: Date): Post[] {
+export function getScheduledPostsForPlatformDay(items: Post[], platform: Platform, dayStart: Date): Post[] {
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
 
-  return items.filter((item): item is Post => {
-    if (item.type !== 'post') return false;
-    const post = item as Post;
-    if (post.platform !== platform) return false;
-    if (!post.scheduledFor) return false;
-    const scheduled = new Date(post.scheduledFor);
+  return items.filter((item) => {
+    if (item.platform !== platform) return false;
+    if (!item.scheduledFor) return false;
+    const scheduled = new Date(item.scheduledFor);
     return scheduled >= dayStart && scheduled < dayEnd;
   });
 }
@@ -261,12 +259,12 @@ export function htmlToMarkdown(html: string): string {
 export function getPinnedPosts(platform: Platform | null): Post[] {
   const feed = loadFeed();
   return feed.items
-    .filter((item): item is Post => item.type === 'post' && !!item.pinned && item.platform === platform)
+    .filter((item) => !!item.pinned && item.platform === platform)
     .slice(0, 5);
 }
 
-export function countPinnedForPlatform(items: AnyContent[], platform: Platform | null): number {
-  return items.filter((item) => item.type === 'post' && !!(item as Post).pinned && (item as Post).platform === platform).length;
+export function countPinnedForPlatform(items: Post[], platform: Platform | null): number {
+  return items.filter((item) => !!item.pinned && item.platform === platform).length;
 }
 
 export function createDerivedPost(sourceId: string, targetPlatform: Platform, body: string = ''): Post {
@@ -285,14 +283,10 @@ export function createDerivedPost(sourceId: string, targetPlatform: Platform, bo
 
 export function getDerivedPosts(sourceId: string): Post[] {
   const feed = loadFeed();
-  return feed.items.filter(
-    (item): item is Post => item.type === 'post' && (item as Post).sourceId === sourceId
-  );
+  return feed.items.filter((item) => item.sourceId === sourceId);
 }
 
 export function getSourcePost(sourceId: string): Post | undefined {
   const feed = loadFeed();
-  return feed.items.find(
-    (item): item is Post => item.type === 'post' && item.id === sourceId
-  );
+  return feed.items.find((item) => item.id === sourceId);
 }

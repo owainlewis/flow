@@ -42,7 +42,7 @@ function findRoot(posts: Post[], postId: string): string {
 /** Collect all post IDs in a derivation chain */
 export function getRelatedPosts(postId: string): Post[] {
   const feed = loadFeed();
-  const allPosts = feed.items.filter((item): item is Post => item.type === 'post');
+  const allPosts = feed.items;
 
   // Find the root
   const rootId = findRoot(allPosts, postId);
