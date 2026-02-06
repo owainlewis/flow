@@ -1,16 +1,13 @@
 import { Platform } from './content';
 
+export type ChatMessageRole = 'user' | 'assistant';
+
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: ChatMessageRole;
   content: string;
   timestamp: number;
   quickActionId?: string;
-}
-
-export interface ChatHistory {
-  postId: string;
-  messages: ChatMessage[];
 }
 
 export interface QuickAction {
@@ -25,16 +22,3 @@ export interface Playbook {
   systemPrompt: string;
   quickActions: QuickAction[];
 }
-
-export interface ChatAPIRequest {
-  messages: { role: 'user' | 'assistant'; content: string }[];
-  systemPrompt: string;
-  currentContent: string;
-  currentTitle?: string;
-  currentDescription?: string;
-  platform: Platform | null;
-  apiKey: string;
-}
-
-export const CHAT_STORAGE_PREFIX = 'contentflow-chat-';
-export const API_KEY_STORAGE_KEY = 'contentflow-api-key';

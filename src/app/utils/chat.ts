@@ -1,10 +1,13 @@
-import { ChatMessage, CHAT_STORAGE_PREFIX, API_KEY_STORAGE_KEY } from '../types/chat';
+import { ChatMessage, ChatMessageRole } from '../types/chat';
+
+const CHAT_STORAGE_PREFIX = 'contentflow-chat-';
+const API_KEY_STORAGE_KEY = 'contentflow-api-key';
 
 export function generateMessageId(): string {
   return Math.random().toString(36).substring(2, 9);
 }
 
-export function createChatMessage(role: 'user' | 'assistant', content: string, quickActionId?: string): ChatMessage {
+export function createChatMessage(role: ChatMessageRole, content: string, quickActionId?: string): ChatMessage {
   return {
     id: generateMessageId(),
     role,
